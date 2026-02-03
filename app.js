@@ -67,6 +67,7 @@ const pad2 = (n) => String(n).padStart(2, "0");
 const toISODateLocal = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
 const normalize = (value) => (value || "").toString().trim().toLowerCase();
+const normalizeKey = (value) => normalize(value).replace(/\s+/g, " ");
 
 const formatCurrency = (value) =>
   Number(value || 0).toLocaleString("en-IN", { style: "currency", currency: "INR" });
@@ -259,8 +260,8 @@ const exportReportXLSX = (transactions, sheetName, filename) => {
 const analyzeDuplicates = (transactions) => {
   const keyFn = (t) =>
     [
-      normalize(t.category_name),
-      normalize(t.subcategory_name),
+      normalizeKey(t.category_name),
+      normalizeKey(t.subcategory_name),
       Number(t.amount || 0).toFixed(2),
       normalize(t.transaction_type),
     ].join("|");
@@ -295,10 +296,10 @@ const analyzeDuplicates = (transactions) => {
 };
 
 const analyzeSupplierDuplicates = (transactions) => {
-  const supplierTxns = transactions.filter((t) => normalize(t.category_name) === "supplier");
+  const supplierTxns = transactions.filter((t) => normalizeKey(t.category_name) === "supplier");
   const keyFn = (t) => {
     const amount = Number(t.amount || 0);
-    return [normalize(t.subcategory_name), amount.toFixed(2)].join("|");
+    return [normalizeKey(t.subcategory_name), amount.toFixed(2)].join("|");
   };
   const grouped = groupBy(supplierTxns, keyFn);
 
@@ -483,13 +484,8 @@ const applyFiltersToUI = (filters) => {
 };
 
 const setDefaultFilters = () => {
-  const today = new Date();
-  const end = toISODateLocal(today);
-  const startDate = new Date(today);
-  // Default: last 10 days including today.
-  startDate.setDate(today.getDate() - 9);
-  const start = toISODateLocal(startDate);
-  state.filters = { start, end, outlet: "", flow: "all" };
+  // Default: all time so historical duplicates remain visible.
+  state.filters = { start: "", end: "", outlet: "", flow: "all" };
   applyFiltersToUI(state.filters);
 };
 
