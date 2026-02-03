@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>1000Metrics | Data Quality Terminal</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Fraunces:wght@500;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.1/dist/umd/supabase.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="login-screen" id="loginScreen">
+      <div class="login-card">
+        <h1>1000Metrics</h1>
+        <p>Secure access to Audit + Reports</p>
+        <label>
+          Username
+          <input type="text" id="loginUsername" />
+        </label>
+        <label>
+          Password
+          <input type="password" id="loginPassword" />
+        </label>
+        <button class="primary" id="loginBtn">Login</button>
+        <div class="login-status" id="loginStatus">Enter credentials to continue.</div>
+      </div>
+    </div>
+
+    <div class="page" id="appPage">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="brand-mark"></div>
+          <div>
+            <h1>1000Metrics</h1>
+            <p>Data Quality Terminal</p>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav-item is-active" data-section="audit" title="Audit">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 3h6M10 3v3m4-3v3M7 6h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M8 11h8M8 15h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="nav-label">Audit</span>
+          </button>
+          <button class="nav-item" data-section="report" title="Report">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M7 3h7l3 3v15a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M14 3v4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M8 12h8M8 16h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </span>
+            <span class="nav-label">Report</span>
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <button class="nav-item logout" id="logoutBtn" title="Logout">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M10 7V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-7a2 2 0 0 1-2-2v-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M14 12H3m0 0 3-3M3 12l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="nav-label">Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <div class="main">
+        <header class="topbar">
+          <div class="header-title">
+            <h2 id="pageTitle">Audit</h2>
+            <p id="pageSubtitle">Quality control and duplicate detection.</p>
+          </div>
+          <div class="actions">
+            <button id="menuBtn" class="ghost icon-btn" aria-label="Toggle sidebar">
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+            </button>
+            <button id="refreshBtn" class="primary">Refresh</button>
+            <span id="statusText" class="status">Connecting…</span>
+          </div>
+        </header>
+
+        <div class="filterbar">
+          <label>
+            Start date
+            <input type="date" id="filterStart" />
+          </label>
+          <label>
+            End date
+            <input type="date" id="filterEnd" />
+          </label>
+          <label>
+            Outlet
+            <select id="filterOutlet"></select>
+          </label>
+          <label>
+            Flow
+            <select id="filterFlow">
+              <option value="all">All</option>
+              <option value="inflow">Inflow</option>
+              <option value="outflow">Outflow</option>
+            </select>
+          </label>
+          <button class="ghost" id="clearFiltersBtn">Clear</button>
+        </div>
+
+        <main class="content">
+          <section class="section is-active" id="auditSection">
+            <section class="card">
+              <div class="card-header">
+                <h2>Entries Missing Subcategory</h2>
+                <div class="legend">
+                  <span class="legend-item"><span class="dot yellow"></span> Missing subcategory</span>
+                </div>
+                <div class="card-actions">
+                  <button class="ghost" data-export="missing">Export CSV</button>
+                  <button class="ghost" data-export-xlsx="missing">Export XLSX</button>
+                  <button class="ghost" data-expand="missing">Expand</button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <div class="table" id="missingSubcategoryTable"></div>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-header">
+                <h2>Rectified Entries</h2>
+                <div class="legend">
+                  <span class="legend-item"><span class="dot green"></span> Subcategory present (rectified)</span>
+                </div>
+                <div class="card-actions">
+                  <button class="ghost" data-export="rectified">Export CSV</button>
+                  <button class="ghost" data-export-xlsx="rectified">Export XLSX</button>
+                  <button class="ghost" data-expand="rectified">Expand</button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <div class="table" id="rectifiedTable"></div>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-header">
+                <h2>Potential Duplicate Entries</h2>
+                <div class="legend">
+                  <span class="legend-item"><span class="dot red"></span> Exact match (date + category + subcategory + amount + flow)</span>
+                  <span class="legend-item"><span class="dot yellow"></span> Same details, date mismatch</span>
+                </div>
+                <div class="card-actions">
+                  <button class="ghost" data-export="duplicates">Export CSV</button>
+                  <button class="ghost" data-export-xlsx="duplicates">Export XLSX</button>
+                  <button class="ghost" data-expand="duplicates">Expand</button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <div class="table" id="duplicateTable"></div>
+              </div>
+            </section>
+
+            <section class="card">
+              <div class="card-header">
+                <h2>Supplier Duplicate Payments</h2>
+                <div class="legend">
+                  <span class="legend-item"><span class="dot red"></span> Same date + subcategory + amount</span>
+                  <span class="legend-item"><span class="dot yellow"></span> Same subcategory + amount, date mismatch</span>
+                </div>
+                <div class="card-actions">
+                  <button class="ghost" data-export="supplier">Export CSV</button>
+                  <button class="ghost" data-export-xlsx="supplier">Export XLSX</button>
+                  <button class="ghost" data-expand="supplier">Expand</button>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <div class="table" id="supplierDuplicateTable"></div>
+              </div>
+            </section>
+          </section>
+
+          <section class="section" id="reportSection">
+            <div class="report-grid">
+              <section class="card">
+                <div class="card-header">
+                  <h2>Sales</h2>
+                  <div class="legend">
+                    <span class="legend-item">Inflow only • Category: Sales</span>
+                  </div>
+                  <div class="card-actions">
+                    <button class="ghost" data-report-export="sales">Export CSV</button>
+                    <button class="ghost" data-report-export-xlsx="sales">Export XLSX</button>
+                    <button class="ghost" data-expand="salesReport">Expand</button>
+                  </div>
+                </div>
+                <div class="table-wrap">
+                  <div class="rtable" id="salesTable"></div>
+                </div>
+              </section>
+
+              <section class="card">
+                <div class="card-header">
+                  <h2>Expenses</h2>
+                  <div class="legend">
+                    <span class="legend-item">Outflow only</span>
+                  </div>
+                  <div class="card-actions">
+                    <button class="ghost" data-report-export="expenses">Export CSV</button>
+                    <button class="ghost" data-report-export-xlsx="expenses">Export XLSX</button>
+                    <button class="ghost" data-expand="expensesReport">Expand</button>
+                  </div>
+                </div>
+                <div class="table-wrap">
+                  <div class="rtable" id="expensesTable"></div>
+                </div>
+              </section>
+
+              <section class="card">
+                <div class="card-header">
+                  <h2>Category-wise OPEX</h2>
+                  <div class="legend">
+                    <span class="legend-item">Outflow totals by category</span>
+                  </div>
+                  <div class="card-actions">
+                    <button class="ghost" data-report-export="opexCategories">Export CSV</button>
+                    <button class="ghost" data-report-export-xlsx="opexCategories">Export XLSX</button>
+                    <button class="ghost" data-expand="opexCategories">Expand</button>
+                  </div>
+                </div>
+                <div class="table-wrap">
+                  <div class="rtable" id="opexCategoryTable"></div>
+                </div>
+              </section>
+
+              <section class="card">
+                <div class="card-header">
+                  <h2>Subcategory-wise OPEX</h2>
+                  <div class="legend">
+                    <span class="legend-item">Outflow totals by subcategory</span>
+                  </div>
+                  <div class="card-actions">
+                    <button class="ghost" data-report-export="opexSubcategories">Export CSV</button>
+                    <button class="ghost" data-report-export-xlsx="opexSubcategories">Export XLSX</button>
+                    <button class="ghost" data-expand="opexSubcategories">Expand</button>
+                  </div>
+                </div>
+                <div class="table-wrap">
+                  <div class="rtable" id="opexSubcategoryTable"></div>
+                </div>
+              </section>
+
+              <section class="card">
+                <div class="card-header">
+                  <h2>Description-wise OPEX</h2>
+                  <div class="legend">
+                    <span class="legend-item">Outflow totals by description</span>
+                  </div>
+                  <div class="card-actions">
+                    <button class="ghost" data-report-export="opexDescriptions">Export CSV</button>
+                    <button class="ghost" data-report-export-xlsx="opexDescriptions">Export XLSX</button>
+                    <button class="ghost" data-expand="opexDescriptions">Expand</button>
+                  </div>
+                </div>
+                <div class="table-wrap">
+                  <div class="rtable" id="opexDescriptionTable"></div>
+                </div>
+              </section>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>
